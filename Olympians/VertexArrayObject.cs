@@ -16,24 +16,24 @@ public unsafe struct VertexArrayObject : IDisposable, IBindable
         _vao = _gl.GenVertexArray();
     }
 
+    public void Dispose()
+    {
+        _gl.DeleteVertexArray(_vao);
+    }
+
     public void Bind()
     {
         _gl.BindVertexArray(_vao);
     }
 
-    public void Dispose()
+    public void Reset()
     {
-        _gl.DeleteVertexArray(_vao);
+        _gl.BindVertexArray(0);
     }
 
     public void EnableFloatAttribute(uint index, int size, uint stride, int offset)
     {
         _gl.EnableVertexAttribArray(index);
         _gl.VertexAttribPointer(index, size, VertexAttribPointerType.Float, false, stride * sizeof(float), offset * sizeof(float));
-    }
-
-    public void Reset()
-    {
-        _gl.BindVertexArray(0);
     }
 }

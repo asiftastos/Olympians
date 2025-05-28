@@ -15,26 +15,27 @@ public unsafe class IndexBufferObject : IDisposable, IBindable
         _ebo = _gl.GenBuffer();
     }
 
-    public void Bind()
-    {
-        _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
-    }
-
     public void Dispose()
     {
         _gl.DeleteBuffer(_ebo);
     }
 
-    public void Data(IEnumerable<uint> data, int size)
+    public void Bind()
     {
-        fixed (uint* buf = data.ToArray())
-        {
-            _gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(size * sizeof(uint)), buf, BufferUsageARB.StaticDraw);
-        }
+        _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
     }
 
     public void Reset()
     {
         _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
+    }
+
+    public void Data(IEnumerable<uint> data, int elementCount)
+    {
+        //fixed: don't let GC move this data or the pointer will be incorect as we use it
+        fixed (uint* buf = data.ToArray())
+        {
+            _gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(elementCount * sizeof(uint)), buf, BufferUsageARB.StaticDraw);
+        }
     }
 }

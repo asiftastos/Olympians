@@ -16,15 +16,20 @@ public class ShaderProgram : IDisposable, IBindable
         _id = _gl.CreateProgram();
     }
 
+    public void Dispose()
+    {
+        _gl.UseProgram(0);
+        _gl.DeleteProgram(_id);
+    }
+
     public void Bind()
     {
         _gl.UseProgram(_id);
     }
 
-    public void Dispose()
+    public void Reset()
     {
         _gl.UseProgram(0);
-        _gl.DeleteProgram(_id);
     }
 
     public void Link(Shader vertex, Shader fragment)
@@ -37,10 +42,5 @@ public class ShaderProgram : IDisposable, IBindable
         _gl.GetProgram(_id, ProgramPropertyARB.LinkStatus, out int status);
         if (status != (int)GLEnum.True)
             throw new Exception($"Program failed to link: {_gl.GetProgramInfoLog(_id)}");
-    }
-
-    public void Reset()
-    {
-        _gl.UseProgram(0);
     }
 }
