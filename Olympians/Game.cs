@@ -37,6 +37,7 @@ public class Game : IDisposable
         _window.Update += OnUpdate;
         _window.Render += OnRender;
         _window.Closing += OnClosing;
+        _window.Resize += OnResize;
     }
 
     private void OnClosing()
@@ -140,4 +141,8 @@ public class Game : IDisposable
             _window.Close();
     }
 
+    private void OnResize(Vector2D<int> d)
+    {
+        throw new NotImplementedException();
+    }
 }

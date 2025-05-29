@@ -1,5 +1,6 @@
 using System.Drawing;
 using Silk.NET.Core.Native;
+using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 
@@ -36,6 +37,11 @@ public unsafe class Renderer
         {
             obj.Reset();
         }
+    }
+
+    public void Resize(Vector2D<int> newsize)
+    {
+        _gl.Viewport(newsize);
     }
 
     public void BeginRender()
