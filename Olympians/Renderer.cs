@@ -25,11 +25,6 @@ public unsafe class Renderer
         _gl.ClearColor(Color.CornflowerBlue);
     }
 
-    public void BeginRender()
-    {
-        _gl.Clear(ClearBufferMask.ColorBufferBit);
-    }
-
     public void BindObject(IBindable bobj)
     {
         bobj.Bind();
@@ -43,8 +38,19 @@ public unsafe class Renderer
         }
     }
 
+    public void BeginRender()
+    {
+        _gl.Clear(ClearBufferMask.ColorBufferBit);
+    }
+
     public void DrawIndexedTriangles(uint elementCount)
     {
         _gl.DrawElements(PrimitiveType.Triangles, elementCount, DrawElementsType.UnsignedInt, (void*)0);
+    }
+
+    public void EnableBlend()
+    {
+        _gl.Enable(EnableCap.Blend);
+        _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
 }

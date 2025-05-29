@@ -32,6 +32,12 @@ public class ShaderProgram : IDisposable, IBindable
         _gl.UseProgram(0);
     }
 
+    public void UniformTexture(string name, int textureunit)
+    {
+        int location = _gl.GetUniformLocation(_id, name);
+        _gl.Uniform1(location, textureunit);
+    }
+
     public void Link(Shader vertex, Shader fragment)
     {
         vertex.Attach(_id);

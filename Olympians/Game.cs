@@ -21,6 +21,8 @@ public class Game : IDisposable
     private Shader _simpleFragmentShader;
     private ShaderProgram _simpleShaderProgram;
 
+    private Texture _texture;
+
     public Game()
     {
         WindowOptions windowOptions = WindowOptions.Default with
@@ -39,6 +41,7 @@ public class Game : IDisposable
 
     private void OnClosing()
     {
+        _texture.Dispose();
         _simpleVertexShader.Dispose();
         _simpleFragmentShader.Dispose();
         _simpleShaderProgram.Dispose();
@@ -72,10 +75,10 @@ public class Game : IDisposable
 
         float[] vertices =
         {
-            0.5f, 0.5f, 0.0f,
-            0.5f, -0.5f, 0.0f,
-            -0.5f, -0.5f, 0.0f,
-            -0.5f, 0.5f, 0.0f
+            0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
+            0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+            -0.5f, 0.5f, 0.0f,  0.0f, 1.0f
         };
 
         uint[] indices =
@@ -101,10 +104,19 @@ public class Game : IDisposable
         _simpleShaderProgram = new ShaderProgram(_renderer.GLContext);
         _simpleShaderProgram.Link(_simpleVertexShader, _simpleFragmentShader);
 
-        _vao.EnableFloatAttribute(0, 3, 3, 0);
+        _vao.EnableFloatAttribute(0, 3, 5, 0); //vertex data attribute
+        _vao.EnableFloatAttribute(1, 2, 5, 3); //texture coordinate data attribute
+
+        _texture = new Texture(_renderer.GLContext);
+        _renderer.BindObject(_texture);
+        _texture.LoadFromFile("Assets/Textures/silk.png");
 
         //always reset (unbind) VAO first, otherwise it will capture the other unbinds for himself
-        _renderer.ResetObjects(new IBindable[] { _vao, _vbo, _ebo });
+        _renderer.ResetObjects(new IBindable[] { _vao, _vbo, _ebo, _texture });
+
+        _simpleShaderProgram.UniformTexture("uTexture", 0);
+
+        _renderer.EnableBlend();
     }
 
     private void OnUpdate(double deltaTime)
@@ -118,6 +130,7 @@ public class Game : IDisposable
 
         _renderer.BindObject(_vao);
         _renderer.BindObject(_simpleShaderProgram);
+        _renderer.BindObject(_texture);
         _renderer.DrawIndexedTriangles(6);
     }
 

@@ -34,6 +34,6 @@ public unsafe struct VertexArrayObject : IDisposable, IBindable
     public void EnableFloatAttribute(uint index, int size, uint stride, int offset)
     {
         _gl.EnableVertexAttribArray(index);
-        _gl.VertexAttribPointer(index, size, VertexAttribPointerType.Float, false, stride * sizeof(float), offset * sizeof(float));
+        _gl.VertexAttribPointer(index, size, VertexAttribPointerType.Float, false, stride * sizeof(float), (void*)(offset * sizeof(float)));
     }
 }
