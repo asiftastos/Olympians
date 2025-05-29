@@ -1,6 +1,8 @@
 using Silk.NET.Windowing;
 using Silk.NET.Input;
 using Silk.NET.Maths;
+using Silk.NET.OpenGL.Extensions.ImGui;
+using ImGuiNET;
 
 namespace Olympians;
 
@@ -9,7 +11,11 @@ public class Game : IDisposable
 {
     private IWindow _window;
 
+    private IInputContext inputContext;
+
     private Renderer _renderer;
+
+    private ImGuiController _imgui;
 
     private VertexArrayObject _vao;
 
@@ -37,11 +43,12 @@ public class Game : IDisposable
         _window.Update += OnUpdate;
         _window.Render += OnRender;
         _window.Closing += OnClosing;
-        _window.Resize += OnResize;
+        _window.FramebufferResize += OnResize;
     }
 
     private void OnClosing()
     {
+        _imgui?.Dispose();
         _texture.Dispose();
         _simpleVertexShader.Dispose();
         _simpleFragmentShader.Dispose();
@@ -63,13 +70,16 @@ public class Game : IDisposable
 
     private void OnLoad()
     {
-        IInputContext inputContext = _window.CreateInput();
+        inputContext = _window.CreateInput();
+
+        _renderer = new Renderer(_window);
+
+        _imgui = new ImGuiController(_renderer.GLContext, _window, inputContext);
+
         for (int i = 0; i < inputContext.Keyboards.Count; i++)
         {
             inputContext.Keyboards[i].KeyDown += OnKeyDown;
         }
-
-        _renderer = new Renderer(_window);
 
         _vao = new VertexArrayObject(_renderer.GLContext);
         _renderer.BindObject(_vao);
@@ -115,14 +125,14 @@ public class Game : IDisposable
         //always reset (unbind) VAO first, otherwise it will capture the other unbinds for himself
         _renderer.ResetObjects(new IBindable[] { _vao, _vbo, _ebo, _texture });
 
-        _simpleShaderProgram.UniformTexture("uTexture", 0);
+        _simpleShaderProgram.Uniform("uTexture", 0);
 
         _renderer.EnableBlend();
     }
 
     private void OnUpdate(double deltaTime)
     {
-
+        _imgui.Update((float)deltaTime);
     }
 
     private void OnRender(double deltaTime)
@@ -133,6 +143,10 @@ public class Game : IDisposable
         _renderer.BindObject(_simpleShaderProgram);
         _renderer.BindObject(_texture);
         _renderer.DrawIndexedTriangles(6);
+
+        ImGui.ShowMetricsWindow();
+
+        _imgui.Render();
     }
 
     private void OnKeyDown(IKeyboard keyboard, Key key, int keyCode)
