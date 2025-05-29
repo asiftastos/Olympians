@@ -2,7 +2,6 @@ using Silk.NET.Windowing;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL.Extensions.ImGui;
-using ImGuiNET;
 
 namespace Olympians;
 
@@ -144,9 +143,7 @@ public class Game : IDisposable
         _renderer.BindObject(_texture);
         _renderer.DrawIndexedTriangles(6);
 
-        ImGui.ShowMetricsWindow();
-
-        _imgui.Render();
+        _renderer.RenderImgui(_imgui);
     }
 
     private void OnKeyDown(IKeyboard keyboard, Key key, int keyCode)

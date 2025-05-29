@@ -1,7 +1,9 @@
 using System.Drawing;
+using ImGuiNET;
 using Silk.NET.Core.Native;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
+using Silk.NET.OpenGL.Extensions.ImGui;
 using Silk.NET.Windowing;
 
 namespace Olympians;
@@ -58,5 +60,12 @@ public unsafe class Renderer
     {
         _gl.Enable(EnableCap.Blend);
         _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+    }
+
+    public void RenderImgui(ImGuiController imGui)
+    {
+        ImGui.ShowMetricsWindow();
+
+        imGui.Render();
     }
 }
