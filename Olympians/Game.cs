@@ -2,6 +2,7 @@ using Silk.NET.Windowing;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL.Extensions.ImGui;
+using ImGuiNET;
 
 namespace Olympians;
 
@@ -15,6 +16,10 @@ public class Game : IDisposable
     private Renderer _renderer;
 
     private ImGuiController _imgui;
+
+    private bool _exit;
+
+    private bool _showProperties;
 
     private VertexArrayObject _vao;
 
@@ -43,6 +48,9 @@ public class Game : IDisposable
         _window.Render += OnRender;
         _window.Closing += OnClosing;
         _window.FramebufferResize += OnResize;
+
+        _exit = false;
+        _showProperties = false;
     }
 
     private void OnClosing()
@@ -79,6 +87,8 @@ public class Game : IDisposable
         {
             inputContext.Keyboards[i].KeyDown += OnKeyDown;
         }
+
+        _renderer.OnImguiDraw += DrawImgui;
 
         _vao = new VertexArrayObject(_renderer.GLContext);
         _renderer.BindObject(_vao);
@@ -129,13 +139,47 @@ public class Game : IDisposable
         _renderer.EnableBlend();
     }
 
+    private void DrawImgui()
+    {
+        ImGui.SetNextWindowPos(new System.Numerics.Vector2(0.0f, 0.0f), ImGuiCond.Always);
+        ImGui.SetNextWindowSize(new System.Numerics.Vector2(_window.Size.X, 60.0f));
+        ImGui.Begin("Game", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoScrollbar);
+
+        if (ImGui.Button("Properties"))
+            _showProperties = true;
+            
+        if (_showProperties)
+        {
+            ImGui.Begin("Renderer properties");
+
+            bool debugdraw = _renderer.DebugDraw;
+            if(ImGui.Checkbox("Debug draw", ref debugdraw))
+                _renderer.DebugDraw = debugdraw;
+            if (ImGui.IsItemHovered())
+                ImGui.SetItemTooltip("Enable/Disable debug drawing");
+
+            ImGui.End();
+        }
+
+        ImGui.SameLine();
+        if (ImGui.Button("Exit"))
+            _exit = true;
+
+        ImGui.End();
+    }
+
     private void OnUpdate(double deltaTime)
     {
         _imgui.Update((float)deltaTime);
+
+        if (_exit)
+            _window.Close();
     }
 
     private void OnRender(double deltaTime)
     {
+        _renderer.RenderImgui();
+
         _renderer.BeginRender();
 
         _renderer.BindObject(_vao);
@@ -143,7 +187,7 @@ public class Game : IDisposable
         _renderer.BindObject(_texture);
         _renderer.DrawIndexedTriangles(6);
 
-        _renderer.RenderImgui(_imgui);
+        _renderer.EndRender(_imgui);
     }
 
     private void OnKeyDown(IKeyboard keyboard, Key key, int keyCode)
@@ -154,6 +198,6 @@ public class Game : IDisposable
 
     private void OnResize(Vector2D<int> d)
     {
-        throw new NotImplementedException();
+        _renderer.Resize(d);
     }
 }

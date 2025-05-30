@@ -12,7 +12,13 @@ public unsafe class Renderer
 {
     private GL _gl;
 
+    private bool _debugDraw;
+
     public GL GLContext { get { return _gl; } }
+
+    public bool DebugDraw { get { return _debugDraw; } set { _debugDraw = value; }}
+
+    public Action? OnImguiDraw { get; set; }
 
     public Renderer(IWindow window)
     {
@@ -26,6 +32,8 @@ public unsafe class Renderer
         Console.WriteLine("GLSL version: " + SilkMarshal.PtrToString((nint)_gl.GetString(GLEnum.ShadingLanguageVersion)));
 
         _gl.ClearColor(Color.CornflowerBlue);
+
+        _debugDraw = false;
     }
 
     public void BindObject(IBindable bobj)
@@ -51,6 +59,11 @@ public unsafe class Renderer
         _gl.Clear(ClearBufferMask.ColorBufferBit);
     }
 
+    public void EndRender(ImGuiController imGui)
+    {
+        imGui.Render();
+    }
+
     public void DrawIndexedTriangles(uint elementCount)
     {
         _gl.DrawElements(PrimitiveType.Triangles, elementCount, DrawElementsType.UnsignedInt, (void*)0);
@@ -62,10 +75,21 @@ public unsafe class Renderer
         _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
 
-    public void RenderImgui(ImGuiController imGui)
+    public void RenderImgui()
     {
-        ImGui.ShowMetricsWindow();
+        if (OnImguiDraw != null)
+            OnImguiDraw();
 
-        imGui.Render();
+        if (_debugDraw)
+        {
+            _gl.PolygonMode(GLEnum.FrontAndBack, GLEnum.Line);
+
+            ImGui.SetNextWindowPos(new System.Numerics.Vector2(500.0f, 300.0f), ImGuiCond.None);
+            ImGui.ShowMetricsWindow();
+        }
+        else
+        {
+            _gl.PolygonMode(GLEnum.FrontAndBack, GLEnum.Fill);
+        }
     }
 }
