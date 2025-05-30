@@ -90,6 +90,72 @@ public class Game : IDisposable
 
         _renderer.OnImguiDraw += DrawImgui;
 
+        LoadTexturedQuad();
+
+        _renderer.EnableBlend();
+    }
+
+    private void DrawImgui()
+    {
+        ImGui.SetNextWindowPos(new System.Numerics.Vector2(0.0f, 0.0f), ImGuiCond.Always);
+        ImGui.SetNextWindowSize(new System.Numerics.Vector2(_window.Size.X, 60.0f));
+        ImGui.Begin("Game", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoScrollbar);
+
+        if (ImGui.Button("Properties"))
+            _showProperties = true;
+
+        if (_showProperties)
+        {
+            ImGui.Begin("Renderer properties");
+
+            bool debugdraw = _renderer.DebugDraw;
+            if (ImGui.Checkbox("Debug draw", ref debugdraw))
+                _renderer.DebugDraw = debugdraw;
+            if (ImGui.IsItemHovered())
+                ImGui.SetItemTooltip("Enable/Disable debug drawing");
+
+            ImGui.End();
+        }
+
+        ImGui.SameLine();
+        if (ImGui.Button("Exit"))
+            _exit = true;
+
+        ImGui.End();
+    }
+
+    private void OnUpdate(double deltaTime)
+    {
+        _imgui.Update((float)deltaTime);
+
+        if (_exit)
+            _window.Close();
+    }
+
+    private void OnRender(double deltaTime)
+    {
+        _renderer.DrawImgui();
+
+        _renderer.BeginRender();
+
+        RenderTexturedQuad();
+
+        _renderer.EndRender(_imgui);
+    }
+
+    private void OnKeyDown(IKeyboard keyboard, Key key, int keyCode)
+    {
+        if (key == Key.Escape)
+            _window.Close();
+    }
+
+    private void OnResize(Vector2D<int> d)
+    {
+        _renderer.Resize(d);
+    }
+
+    private void LoadTexturedQuad()
+    {
         _vao = new VertexArrayObject(_renderer.GLContext);
         _renderer.BindObject(_vao);
 
@@ -135,69 +201,13 @@ public class Game : IDisposable
         _renderer.ResetObjects(new IBindable[] { _vao, _vbo, _ebo, _texture });
 
         _simpleShaderProgram.Uniform("uTexture", 0);
-
-        _renderer.EnableBlend();
     }
 
-    private void DrawImgui()
+    private void RenderTexturedQuad()
     {
-        ImGui.SetNextWindowPos(new System.Numerics.Vector2(0.0f, 0.0f), ImGuiCond.Always);
-        ImGui.SetNextWindowSize(new System.Numerics.Vector2(_window.Size.X, 60.0f));
-        ImGui.Begin("Game", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoScrollbar);
-
-        if (ImGui.Button("Properties"))
-            _showProperties = true;
-            
-        if (_showProperties)
-        {
-            ImGui.Begin("Renderer properties");
-
-            bool debugdraw = _renderer.DebugDraw;
-            if(ImGui.Checkbox("Debug draw", ref debugdraw))
-                _renderer.DebugDraw = debugdraw;
-            if (ImGui.IsItemHovered())
-                ImGui.SetItemTooltip("Enable/Disable debug drawing");
-
-            ImGui.End();
-        }
-
-        ImGui.SameLine();
-        if (ImGui.Button("Exit"))
-            _exit = true;
-
-        ImGui.End();
-    }
-
-    private void OnUpdate(double deltaTime)
-    {
-        _imgui.Update((float)deltaTime);
-
-        if (_exit)
-            _window.Close();
-    }
-
-    private void OnRender(double deltaTime)
-    {
-        _renderer.RenderImgui();
-
-        _renderer.BeginRender();
-
         _renderer.BindObject(_vao);
         _renderer.BindObject(_simpleShaderProgram);
         _renderer.BindObject(_texture);
         _renderer.DrawIndexedTriangles(6);
-
-        _renderer.EndRender(_imgui);
-    }
-
-    private void OnKeyDown(IKeyboard keyboard, Key key, int keyCode)
-    {
-        if (key == Key.Escape)
-            _window.Close();
-    }
-
-    private void OnResize(Vector2D<int> d)
-    {
-        _renderer.Resize(d);
     }
 }

@@ -75,7 +75,7 @@ public unsafe class Renderer
         _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
 
-    public void RenderImgui()
+    public void DrawImgui()
     {
         if (OnImguiDraw != null)
             OnImguiDraw();
@@ -84,7 +84,7 @@ public unsafe class Renderer
         {
             _gl.PolygonMode(GLEnum.FrontAndBack, GLEnum.Line);
 
-            ImGui.SetNextWindowPos(new System.Numerics.Vector2(500.0f, 300.0f), ImGuiCond.None);
+            ImGui.SetNextWindowPos(new System.Numerics.Vector2(500.0f, 300.0f), ImGuiCond.Once);
             ImGui.ShowMetricsWindow();
         }
         else
