@@ -98,16 +98,15 @@ public class Game : IDisposable
     private void DrawImgui()
     {
         ImGui.SetNextWindowPos(new System.Numerics.Vector2(0.0f, 0.0f), ImGuiCond.Always);
-        ImGui.SetNextWindowSize(new System.Numerics.Vector2(_window.Size.X, 60.0f));
+        ImGui.SetNextWindowSize(new System.Numerics.Vector2(_window.Size.X, 40.0f));
         ImGui.Begin("Game", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoScrollbar);
 
         if (ImGui.Button("Properties"))
             _showProperties = true;
 
-        if (_showProperties)
+        if(_showProperties)
         {
-            ImGui.Begin("Renderer properties");
-
+            ImGui.Begin("Renderer properties", ref _showProperties);
             bool debugdraw = _renderer.DebugDraw;
             if (ImGui.Checkbox("Debug draw", ref debugdraw))
                 _renderer.DebugDraw = debugdraw;
@@ -116,6 +115,7 @@ public class Game : IDisposable
 
             ImGui.End();
         }
+
 
         ImGui.SameLine();
         if (ImGui.Button("Exit"))
