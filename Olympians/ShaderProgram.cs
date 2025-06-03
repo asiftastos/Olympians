@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using System.Text;
 using Silk.NET.OpenGL;
 
@@ -53,6 +54,12 @@ public class ShaderProgram : IDisposable, IBindable
         _gl.Uniform1(location, textureunit);
     }
 
+    public unsafe void Uniform(string name, Matrix4x4 mat)
+    {
+        int location = _gl.GetUniformLocation(_id, name);
+        _gl.UniformMatrix4(location, 1, false, (float*)&mat);
+    }
+
     private void Link(uint vs, uint fs)
     {
         _gl.AttachShader(_id, vs);
@@ -68,7 +75,7 @@ public class ShaderProgram : IDisposable, IBindable
         _gl.DetachShader(_id, vs);
         _gl.DetachShader(_id, fs);
         _gl.DeleteShader(vs);
-        _gl.DeleteShader(fs);       
+        _gl.DeleteShader(fs);
     }
 
     private uint CompileFromFile(string filename, ShaderType shaderType)

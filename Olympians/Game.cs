@@ -4,6 +4,7 @@ using Silk.NET.Maths;
 using Silk.NET.OpenGL.Extensions.ImGui;
 using ImGuiNET;
 using Silk.NET.OpenGL;
+using System.Numerics;
 
 namespace Olympians;
 
@@ -31,6 +32,8 @@ public class Game : IDisposable
     private ShaderProgram _simpleShaderProgram;
 
     private Texture _texture;
+
+    private Transform _transform;
 
     public Game()
     {
@@ -200,7 +203,7 @@ public class Game : IDisposable
             AssetsPath = "Assets/Shaders",
             VertexName = "simplevertex",
             FragmentName = "simplefragment"
-         });
+        });
 
 
         _texture = new Texture(_renderer.GLContext);
@@ -210,7 +213,10 @@ public class Game : IDisposable
         //always reset (unbind) VAO first, otherwise it will capture the other unbinds for himself
         _renderer.ResetObjects(new IBindable[] { _vao, _vbo, _ebo, _texture });
 
-        _simpleShaderProgram.Uniform("uTexture", 0);
+        _transform = new Transform
+        {
+            Position = new Vector3(0.0f, 0.0f, 0.0f)
+        };
     }
 
     private void RenderTexturedQuad()
@@ -218,6 +224,8 @@ public class Game : IDisposable
         _renderer.BindObject(_vao);
         _renderer.BindObject(_simpleShaderProgram);
         _renderer.BindObject(_texture);
+        _simpleShaderProgram.Uniform("uTexture", 0);
+        _simpleShaderProgram.Uniform("view", _transform.ViewMatrix);
         _renderer.DrawIndexedTriangles(6);
     }
 }
