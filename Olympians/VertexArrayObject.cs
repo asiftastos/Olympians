@@ -1,9 +1,8 @@
-using System;
-using System.Reflection.Metadata;
-using Silk.NET.Core;
 using Silk.NET.OpenGL;
 
 namespace Olympians;
+
+public readonly record struct AttributeInfo(uint AttribIndex, int Size, uint Stride, int Offset, VertexAttribPointerType AttributeType);
 
 public unsafe struct VertexArrayObject : IDisposable, IBindable
 {
@@ -31,9 +30,12 @@ public unsafe struct VertexArrayObject : IDisposable, IBindable
         _gl.BindVertexArray(0);
     }
 
-    public void EnableFloatAttribute(uint index, int size, uint stride, int offset)
+    public void EnableAttributes(IEnumerable<AttributeInfo> attributes)
     {
-        _gl.EnableVertexAttribArray(index);
-        _gl.VertexAttribPointer(index, size, VertexAttribPointerType.Float, false, stride * sizeof(float), (void*)(offset * sizeof(float)));
+        foreach (var item in attributes)
+        {
+            _gl.EnableVertexAttribArray(item.AttribIndex);
+            _gl.VertexAttribPointer(item.AttribIndex, item.Size, item.AttributeType, false, item.Stride, (void*)item.Offset);
+        }
     }
 }

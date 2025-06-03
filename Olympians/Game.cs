@@ -3,6 +3,7 @@ using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL.Extensions.ImGui;
 using ImGuiNET;
+using Silk.NET.OpenGL;
 
 namespace Olympians;
 
@@ -177,6 +178,22 @@ public class Game : IDisposable
         _renderer.BindObject(_ebo);
         _ebo.Data(indices, indices.Length);
 
+        _vao.EnableAttributes(new[]{
+            new AttributeInfo{
+                AttribIndex = 0,
+                Size = 3,
+                Stride = 5 * sizeof(float),
+                Offset = 0,
+                AttributeType = VertexAttribPointerType.Float
+            },
+            new AttributeInfo{
+                AttribIndex = 1,
+                Size = 2,
+                Stride = 5 * sizeof(float),
+                Offset = 3 * sizeof(float),
+                AttributeType = VertexAttribPointerType.Float
+            }
+        });
 
         _simpleShaderProgram = new ShaderProgram(_renderer.GLContext, new ShaderInfo
         {
@@ -185,8 +202,6 @@ public class Game : IDisposable
             FragmentName = "simplefragment"
          });
 
-        _vao.EnableFloatAttribute(0, 3, 5, 0); //vertex data attribute
-        _vao.EnableFloatAttribute(1, 2, 5, 3); //texture coordinate data attribute
 
         _texture = new Texture(_renderer.GLContext);
         _renderer.BindObject(_texture);
