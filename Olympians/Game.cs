@@ -34,7 +34,6 @@ public class Game : IDisposable
     private Texture _texture;
 
     private Transform _transform;
-    private Matrix4x4 _projection;
 
     public Game()
     {
@@ -95,9 +94,6 @@ public class Game : IDisposable
         LoadColoredQuad();
 
         _renderer.EnableBlend();
-
-        //0,0 is in the center of the window
-        _projection = Matrix4x4.CreateOrthographic(_window.FramebufferSize.X, _window.FramebufferSize.Y, 0.1f, 1.0f);
     }
 
     private void DrawImgui()
@@ -158,7 +154,6 @@ public class Game : IDisposable
     private void OnResize(Vector2D<int> d)
     {
         _renderer.Resize(d);
-        _projection = Matrix4x4.CreateOrthographic(d.X, d.Y, 0.1f, 1.0f);
     }
 
     private void LoadTexturedQuad()
@@ -232,7 +227,7 @@ public class Game : IDisposable
         _renderer.BindObject(_simpleShaderProgram);
         _renderer.BindObject(_texture);
         _simpleShaderProgram.Uniform("uTexture", 0);
-        _simpleShaderProgram.Uniform("view", _transform.ModelMatrix * _projection); //multiplication in reverse order of the shader code
+        _simpleShaderProgram.Uniform("view", _transform.ModelMatrix * _renderer.Ortho); //multiplication in reverse order of the shader code
         _renderer.DrawIndexedTriangles(6);
     }
 
@@ -301,7 +296,7 @@ public class Game : IDisposable
     {
         _renderer.BindObject(_vao);
         _renderer.BindObject(_simpleShaderProgram);
-        _simpleShaderProgram.Uniform("view", _transform.ModelMatrix * _projection); //multiplication in reverse order of the shader code
+        _simpleShaderProgram.Uniform("view", _transform.ModelMatrix * _renderer.Ortho); //multiplication in reverse order of the shader code
         _renderer.DrawIndexedTriangles(6);
     }
 }

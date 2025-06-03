@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Numerics;
 using ImGuiNET;
 using Silk.NET.Core.Native;
 using Silk.NET.Maths;
@@ -14,9 +15,13 @@ public unsafe class Renderer
 
     private bool _debugDraw;
 
+    private Matrix4x4 _ortho;
+
     public GL GLContext { get { return _gl; } }
 
     public bool DebugDraw { get { return _debugDraw; } set { _debugDraw = value; }}
+
+    public Matrix4x4 Ortho { get { return _ortho; } }
 
     public Action? OnImguiDraw { get; set; }
 
@@ -34,6 +39,9 @@ public unsafe class Renderer
         _gl.ClearColor(Color.CornflowerBlue);
 
         _debugDraw = false;
+
+        //0,0 is in the center of the window
+        _ortho = Matrix4x4.CreateOrthographic(window.FramebufferSize.X, window.FramebufferSize.Y, 0.1f, 1.0f);
     }
 
     public void BindObject(IBindable bobj)
@@ -52,6 +60,8 @@ public unsafe class Renderer
     public void Resize(Vector2D<int> newsize)
     {
         _gl.Viewport(newsize);
+
+        _ortho = Matrix4x4.CreateOrthographic(newsize.X, newsize.Y, 0.1f, 1.0f);
     }
 
     public void BeginRender()
