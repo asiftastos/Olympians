@@ -59,7 +59,7 @@ public class Game : IDisposable
     private void OnClosing()
     {
         _imgui?.Dispose();
-        _texture.Dispose();
+        _texture?.Dispose();
         _simpleShaderProgram.Dispose();
         _ebo.Dispose();
         _vbo.Dispose();
@@ -91,7 +91,8 @@ public class Game : IDisposable
 
         _renderer.OnImguiDraw += DrawImgui;
 
-        LoadTexturedQuad();
+        //LoadTexturedQuad();
+        LoadColoredQuad();
 
         _renderer.EnableBlend();
 
@@ -108,7 +109,7 @@ public class Game : IDisposable
         if (ImGui.Button("Properties"))
             _showProperties = true;
 
-        if(_showProperties)
+        if (_showProperties)
         {
             ImGui.Begin("Renderer properties", ref _showProperties);
             bool debugdraw = _renderer.DebugDraw;
@@ -142,7 +143,8 @@ public class Game : IDisposable
 
         _renderer.BeginRender();
 
-        RenderTexturedQuad();
+        //RenderTexturedQuad();
+        RenderColoredQuad();
 
         _renderer.EndRender(_imgui);
     }
@@ -230,7 +232,76 @@ public class Game : IDisposable
         _renderer.BindObject(_simpleShaderProgram);
         _renderer.BindObject(_texture);
         _simpleShaderProgram.Uniform("uTexture", 0);
-        _simpleShaderProgram.Uniform("view",  _transform.ModelMatrix * _projection); //multiplication in reverse order of the shader code
+        _simpleShaderProgram.Uniform("view", _transform.ModelMatrix * _projection); //multiplication in reverse order of the shader code
+        _renderer.DrawIndexedTriangles(6);
+    }
+
+    private void LoadColoredQuad()
+    {
+        _vao = new VertexArrayObject(_renderer.GLContext);
+        _renderer.BindObject(_vao);
+
+        float[] vertices =
+        {
+            100.0f, 100.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+            100.0f, -100.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+            -100.0f, -100.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+            -100.0f, 100.0f, 0.0f,  0.0f, 1.0f, 1.0f, 1.0f
+        };
+
+        uint[] indices =
+        {
+            0u, 1u, 3u,
+            1u, 2u, 3u
+        };
+
+        _vbo = new BufferObject(_renderer.GLContext);
+        _renderer.BindObject(_vbo);
+        _vbo.Data(vertices, vertices.Length);
+
+        _ebo = new IndexBufferObject(_renderer.GLContext);
+        _renderer.BindObject(_ebo);
+        _ebo.Data(indices, indices.Length);
+
+        _vao.EnableAttributes(new[]{
+            new AttributeInfo{
+                AttribIndex = 0,
+                Size = 3,
+                Stride = 7 * sizeof(float),
+                Offset = 0,
+                AttributeType = VertexAttribPointerType.Float
+            },
+            new AttributeInfo{
+                AttribIndex = 1,
+                Size = 4,
+                Stride = 7 * sizeof(float),
+                Offset = 3 * sizeof(float),
+                AttributeType = VertexAttribPointerType.Float
+            }
+        });
+
+        _simpleShaderProgram = new ShaderProgram(_renderer.GLContext, new ShaderInfo
+        {
+            AssetsPath = "Assets/Shaders",
+            VertexName = "colorvertex",
+            FragmentName = "colorfragment"
+        });
+
+
+        //always reset (unbind) VAO first, otherwise it will capture the other unbinds for himself
+        _renderer.ResetObjects(new IBindable[] { _vao, _vbo, _ebo });
+
+        _transform = new Transform
+        {
+            Position = new Vector3(100.0f, 0.0f, 0.0f)
+        };
+    }
+
+    private void RenderColoredQuad()
+    {
+        _renderer.BindObject(_vao);
+        _renderer.BindObject(_simpleShaderProgram);
+        _simpleShaderProgram.Uniform("view", _transform.ModelMatrix * _projection); //multiplication in reverse order of the shader code
         _renderer.DrawIndexedTriangles(6);
     }
 }
