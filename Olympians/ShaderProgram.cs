@@ -5,15 +5,25 @@ namespace Olympians;
 
 public class ShaderProgram : IDisposable, IBindable
 {
+    public readonly record struct ShaderInfo(string VertexShader, string FragmentShader);
+
     private GL _gl;
 
     private uint _id;
 
-    public ShaderProgram(GL gL)
+    public ShaderProgram(GL gL, ShaderInfo shaderInfo)
     {
         _gl = gL;
 
-        _id = _gl.CreateProgram();
+        if (!string.IsNullOrEmpty(shaderInfo.VertexShader) && !string.IsNullOrEmpty(shaderInfo.FragmentShader))
+        {
+            uint vs = CompileFromFile(shaderInfo.VertexShader, ShaderType.VertexShader);
+            uint fs = CompileFromFile(shaderInfo.FragmentShader, ShaderType.FragmentShader);
+
+            _id = _gl.CreateProgram();
+
+            Link(vs, fs);
+        }
     }
 
     public void Dispose()
@@ -38,15 +48,40 @@ public class ShaderProgram : IDisposable, IBindable
         _gl.Uniform1(location, textureunit);
     }
 
-    public void Link(Shader vertex, Shader fragment)
+    private void Link(uint vs, uint fs)
     {
-        vertex.Attach(_id);
-        fragment.Attach(_id);
+        _gl.AttachShader(_id, vs);
+        _gl.AttachShader(_id, fs);
 
         _gl.LinkProgram(_id);
 
         _gl.GetProgram(_id, ProgramPropertyARB.LinkStatus, out int status);
         if (status != (int)GLEnum.True)
             throw new Exception($"Program failed to link: {_gl.GetProgramInfoLog(_id)}");
+
+        //no need to keep after program is linked
+        _gl.DetachShader(_id, vs);
+        _gl.DetachShader(_id, fs);
+        _gl.DeleteShader(vs);
+        _gl.DeleteShader(fs);       
+    }
+
+    private uint CompileFromFile(string filename, ShaderType shaderType)
+    {
+        string code = File.ReadAllText(filename);
+        return CompileFromMemory(code, shaderType);
+    }
+
+    private uint CompileFromMemory(string code, ShaderType shaderType)
+    {
+        uint id = _gl.CreateShader(shaderType);
+        _gl.ShaderSource(id, code);
+        _gl.CompileShader(id);
+
+        _gl.GetShader(id, ShaderParameterName.CompileStatus, out int status);
+        if (status != (int)GLEnum.True)
+            throw new Exception($"Shader failed to compile: {_gl.GetShaderInfoLog(id)}");
+
+        return id;
     }
 }

@@ -27,8 +27,6 @@ public class Game : IDisposable
 
     private IndexBufferObject _ebo;
 
-    private Shader _simpleVertexShader;
-    private Shader _simpleFragmentShader;
     private ShaderProgram _simpleShaderProgram;
 
     private Texture _texture;
@@ -57,8 +55,6 @@ public class Game : IDisposable
     {
         _imgui?.Dispose();
         _texture.Dispose();
-        _simpleVertexShader.Dispose();
-        _simpleFragmentShader.Dispose();
         _simpleShaderProgram.Dispose();
         _ebo.Dispose();
         _vbo.Dispose();
@@ -181,14 +177,7 @@ public class Game : IDisposable
         _renderer.BindObject(_ebo);
         _ebo.Data(indices, indices.Length);
 
-        _simpleVertexShader = new VertexShader(_renderer.GLContext);
-        _simpleVertexShader.CompileFromFile("Assets/Shaders/simplevertex.glsl");
-
-        _simpleFragmentShader = new FragmentShader(_renderer.GLContext);
-        _simpleFragmentShader.CompileFromFile("Assets/Shaders/simplefragment.glsl");
-
-        _simpleShaderProgram = new ShaderProgram(_renderer.GLContext);
-        _simpleShaderProgram.Link(_simpleVertexShader, _simpleFragmentShader);
+        _simpleShaderProgram = new ShaderProgram(_renderer.GLContext, new("Assets/Shaders/simplevertex.glsl", "Assets/Shaders/simplefragment.glsl"));
 
         _vao.EnableFloatAttribute(0, 3, 5, 0); //vertex data attribute
         _vao.EnableFloatAttribute(1, 2, 5, 3); //texture coordinate data attribute
