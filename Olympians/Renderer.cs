@@ -64,6 +64,11 @@ public unsafe class Renderer
         imGui.Render();
     }
 
+    public void DrawTriangles(uint elementCount)
+    {
+        _gl.DrawArrays(PrimitiveType.Triangles, 0, elementCount);
+    }
+
     public void DrawIndexedTriangles(uint elementCount)
     {
         _gl.DrawElements(PrimitiveType.Triangles, elementCount, DrawElementsType.UnsignedInt, (void*)0);

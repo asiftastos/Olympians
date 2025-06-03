@@ -1,10 +1,10 @@
 using Silk.NET.Windowing;
 using Silk.NET.Input;
-using Silk.NET.Maths;
 using Silk.NET.OpenGL.Extensions.ImGui;
 using ImGuiNET;
 using Silk.NET.OpenGL;
 using System.Numerics;
+using Silk.NET.Maths;
 
 namespace Olympians;
 
@@ -34,6 +34,7 @@ public class Game : IDisposable
     private Texture _texture;
 
     private Transform _transform;
+    private Matrix4x4 _projection;
 
     public Game()
     {
@@ -93,6 +94,9 @@ public class Game : IDisposable
         LoadTexturedQuad();
 
         _renderer.EnableBlend();
+
+        //0,0 is in the center of the window
+        _projection = Matrix4x4.CreateOrthographic(_window.FramebufferSize.X, _window.FramebufferSize.Y, 0.1f, 1.0f);
     }
 
     private void DrawImgui()
@@ -152,6 +156,7 @@ public class Game : IDisposable
     private void OnResize(Vector2D<int> d)
     {
         _renderer.Resize(d);
+        _projection = Matrix4x4.CreateOrthographic(d.X, d.Y, 0.1f, 1.0f);
     }
 
     private void LoadTexturedQuad()
@@ -161,10 +166,10 @@ public class Game : IDisposable
 
         float[] vertices =
         {
-            0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
-            0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-            -0.5f, 0.5f, 0.0f,  0.0f, 1.0f
+            100.0f, 100.0f, 0.0f, 1.0f, 1.0f,
+            100.0f, -100.0f, 0.0f, 1.0f, 0.0f,
+            -100.0f, -100.0f, 0.0f, 0.0f, 0.0f,
+            -100.0f, 100.0f, 0.0f,  0.0f, 1.0f
         };
 
         uint[] indices =
@@ -215,7 +220,7 @@ public class Game : IDisposable
 
         _transform = new Transform
         {
-            Position = new Vector3(0.0f, 0.0f, 0.0f)
+            Position = new Vector3(100.0f, 0.0f, 0.0f)
         };
     }
 
@@ -225,7 +230,7 @@ public class Game : IDisposable
         _renderer.BindObject(_simpleShaderProgram);
         _renderer.BindObject(_texture);
         _simpleShaderProgram.Uniform("uTexture", 0);
-        _simpleShaderProgram.Uniform("view", _transform.ViewMatrix);
+        _simpleShaderProgram.Uniform("view",  _transform.ModelMatrix * _projection); //multiplication in reverse order of the shader code
         _renderer.DrawIndexedTriangles(6);
     }
 }
