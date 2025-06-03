@@ -177,7 +177,13 @@ public class Game : IDisposable
         _renderer.BindObject(_ebo);
         _ebo.Data(indices, indices.Length);
 
-        _simpleShaderProgram = new ShaderProgram(_renderer.GLContext, new("Assets/Shaders/simplevertex.glsl", "Assets/Shaders/simplefragment.glsl"));
+
+        _simpleShaderProgram = new ShaderProgram(_renderer.GLContext, new ShaderInfo
+        {
+            AssetsPath = "Assets/Shaders",
+            VertexName = "simplevertex",
+            FragmentName = "simplefragment"
+         });
 
         _vao.EnableFloatAttribute(0, 3, 5, 0); //vertex data attribute
         _vao.EnableFloatAttribute(1, 2, 5, 3); //texture coordinate data attribute

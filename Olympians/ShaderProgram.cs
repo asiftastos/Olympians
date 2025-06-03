@@ -1,11 +1,13 @@
 using System;
+using System.Text;
 using Silk.NET.OpenGL;
 
 namespace Olympians;
 
+public readonly record struct ShaderInfo(string AssetsPath, string VertexName, string FragmentName);
+
 public class ShaderProgram : IDisposable, IBindable
 {
-    public readonly record struct ShaderInfo(string VertexShader, string FragmentShader);
 
     private GL _gl;
 
@@ -15,14 +17,17 @@ public class ShaderProgram : IDisposable, IBindable
     {
         _gl = gL;
 
-        if (!string.IsNullOrEmpty(shaderInfo.VertexShader) && !string.IsNullOrEmpty(shaderInfo.FragmentShader))
+        if (!string.IsNullOrEmpty(shaderInfo.VertexName) && !string.IsNullOrEmpty(shaderInfo.FragmentName))
         {
-            uint vs = CompileFromFile(shaderInfo.VertexShader, ShaderType.VertexShader);
-            uint fs = CompileFromFile(shaderInfo.FragmentShader, ShaderType.FragmentShader);
+            uint vs = CompileFromFile(String.Format("{0}/{1}.glsl", shaderInfo.AssetsPath, shaderInfo.VertexName), ShaderType.VertexShader);
+            uint fs = CompileFromFile(String.Format("{0}/{1}.glsl", shaderInfo.AssetsPath, shaderInfo.FragmentName), ShaderType.FragmentShader);
 
-            _id = _gl.CreateProgram();
+            if (vs > 0 && fs > 0)
+            {
+                _id = _gl.CreateProgram();
 
-            Link(vs, fs);
+                Link(vs, fs);
+            }
         }
     }
 
@@ -68,6 +73,12 @@ public class ShaderProgram : IDisposable, IBindable
 
     private uint CompileFromFile(string filename, ShaderType shaderType)
     {
+        if (!File.Exists(filename))
+        {
+            Console.WriteLine($"Shader file {filename} does not exists!");
+            return 0;
+        }
+
         string code = File.ReadAllText(filename);
         return CompileFromMemory(code, shaderType);
     }
