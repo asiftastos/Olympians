@@ -94,12 +94,15 @@ public class Game : IDisposable, IImguiWindowProvider
             inputContext.Keyboards[i].KeyDown += OnKeyDown;
         }
 
-        _renderer = new Renderer(_window);
+        _renderer = new Renderer(this);
 
         _uiManager = new UIManager(this);
 
         _uiManager.WindowProviders.Add("Game", this);
+        _uiManager.WindowProviders.Add("Renderer", _renderer);
+
         _uiManager.OnImguiDraw += DrawImgui;
+        _uiManager.OnImguiDraw += _renderer.DrawImgui;
 
         //LoadTexturedQuad();
         LoadColoredQuad();
@@ -114,6 +117,7 @@ public class Game : IDisposable, IImguiWindowProvider
         {
             ImGui.Begin(imguiWindow.WindowName);
 
+            ImGui.SameLine();
             if (ImGui.Button("Game"))
                 _showImguiWindow = true;
 

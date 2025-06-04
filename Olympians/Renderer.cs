@@ -9,13 +9,17 @@ using Silk.NET.Windowing;
 
 namespace Olympians;
 
-public unsafe class Renderer
+public unsafe class Renderer: IImguiWindowProvider
 {
+    private Game _game;
+
     private GL _gl;
 
     private bool _debugDraw;
 
     private Matrix4x4 _ortho;
+
+    private bool _showImguiWindow;
 
     public GL GLContext { get { return _gl; } }
 
@@ -23,13 +27,17 @@ public unsafe class Renderer
 
     public Matrix4x4 Ortho { get { return _ortho; } }
 
-    //public Action? OnImguiDraw { get; set; }
+    public bool Show { get => _showImguiWindow; set => _showImguiWindow = value; }
 
-    public Renderer(IWindow window)
+    public string WindowName => "Renderer";
+
+    public Renderer(Game game)
     {
+        _game = game;
+
         Console.WriteLine("Initializing Renderer...!!");
 
-        _gl = window.CreateOpenGL();
+        _gl = _game.MainWindow.CreateOpenGL();
 
         Console.WriteLine("OpenGL version: " + SilkMarshal.PtrToString((nint)_gl.GetString(GLEnum.Version)));
         Console.WriteLine("Vendor: " + SilkMarshal.PtrToString((nint)_gl.GetString(GLEnum.Vendor)));
@@ -41,7 +49,7 @@ public unsafe class Renderer
         _debugDraw = false;
 
         //0,0 is in the center of the window
-        _ortho = Matrix4x4.CreateOrthographic(window.FramebufferSize.X, window.FramebufferSize.Y, 0.1f, 1.0f);
+        _ortho = Matrix4x4.CreateOrthographic(_game.MainWindow.FramebufferSize.X, _game.MainWindow.FramebufferSize.Y, 0.1f, 1.0f);
     }
 
     public void BindObject(IBindable bobj)
@@ -91,25 +99,45 @@ public unsafe class Renderer
 
     public void DrawImgui()
     {
-        //if (OnImguiDraw != null)
-        //    OnImguiDraw();
+        if (_game.UI.WindowProviders.TryGetValue("UI", out IImguiWindowProvider windowProvider))
+        {
+            ImGui.Begin(windowProvider.WindowName);
 
+            ImGui.SameLine();
+            if (ImGui.Button("Renderer"))
+                _showImguiWindow = true;
+            
+            if (ImGui.IsItemHovered())  //refers to the previous item
+                ImGui.SetItemTooltip("Open renderer properties window");
+            
+            ImGui.End();    
+        }
+
+        if (_showImguiWindow)
+        {
+            ImGui.Begin(WindowName, ref _showImguiWindow, ImGuiWindowFlags.None);
+
+            ImGui.Checkbox("Enable debug draw", ref _debugDraw);
+
+            ImGui.End();
+        }
+        
         if (_debugDraw)
-        {
-            _gl.PolygonMode(GLEnum.FrontAndBack, GLEnum.Line);
-
-            ImGui.SetNextWindowPos(new System.Numerics.Vector2(500.0f, 300.0f), ImGuiCond.Once);
-            if (ImGui.Begin("Debug"))
             {
-                ImGui.Text($"FPS: {ImGui.GetIO().Framerate}");
+                _gl.PolygonMode(GLEnum.FrontAndBack, GLEnum.Line);
 
-                ImGui.End();
+                ImGui.SetNextWindowPos(new System.Numerics.Vector2(500.0f, 300.0f), ImGuiCond.Once);
+                if (ImGui.Begin("Debug"))
+                {
+                    ImGui.Text($"FPS: {ImGui.GetIO().Framerate}");
+
+                    ImGui.End();
+                }
+                //ImGui.ShowMetricsWindow();
             }
-            //ImGui.ShowMetricsWindow();
-        }
-        else
-        {
-            _gl.PolygonMode(GLEnum.FrontAndBack, GLEnum.Fill);
-        }
+            else
+            {
+                _gl.PolygonMode(GLEnum.FrontAndBack, GLEnum.Fill);
+            }
     }
 }
