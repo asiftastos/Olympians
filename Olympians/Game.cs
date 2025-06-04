@@ -101,8 +101,8 @@ public class Game : IDisposable, IImguiWindowProvider
         _uiManager.WindowProviders.Add("Game", this);
         _uiManager.WindowProviders.Add("Renderer", _renderer);
 
-        _uiManager.OnImguiDraw += DrawImgui;
         _uiManager.OnImguiDraw += _renderer.DrawImgui;
+        _uiManager.OnImguiDraw += DrawImgui;
 
         //LoadTexturedQuad();
         LoadColoredQuad();
