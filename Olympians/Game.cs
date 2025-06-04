@@ -1,6 +1,5 @@
 using Silk.NET.Windowing;
 using Silk.NET.Input;
-using Silk.NET.OpenGL.Extensions.ImGui;
 using ImGuiNET;
 using Silk.NET.OpenGL;
 using System.Numerics;
@@ -9,7 +8,7 @@ using Silk.NET.Maths;
 namespace Olympians;
 
 #nullable disable
-public class Game : IDisposable
+public class Game : IDisposable, IImguiWindowProvider
 {
     private IWindow _window;
 
@@ -17,11 +16,11 @@ public class Game : IDisposable
 
     private Renderer _renderer;
 
-    private ImGuiController _imgui;
+    private UIManager _uiManager;
 
     private bool _exit;
 
-    private bool _showProperties;
+    private bool _showImguiWindow;
 
     private VertexArrayObject _vao;
 
@@ -34,6 +33,17 @@ public class Game : IDisposable
     private Texture _texture;
 
     private Transform _transform;
+
+    public IWindow MainWindow { get => _window; }
+
+    public Renderer Renderer { get => _renderer; }
+
+    public IInputContext InputContext { get => inputContext; }
+
+    public UIManager UI { get => _uiManager; }
+    public bool Show { get => _showImguiWindow; set => _showImguiWindow = value; }
+
+    public string WindowName => "Game";
 
     public Game()
     {
@@ -52,12 +62,12 @@ public class Game : IDisposable
         _window.FramebufferResize += OnResize;
 
         _exit = false;
-        _showProperties = false;
+        _showImguiWindow = false;
     }
 
     private void OnClosing()
     {
-        _imgui?.Dispose();
+        _uiManager.Dispose();
         _texture?.Dispose();
         _simpleShaderProgram.Dispose();
         _ebo.Dispose();
@@ -79,16 +89,17 @@ public class Game : IDisposable
     {
         inputContext = _window.CreateInput();
 
-        _renderer = new Renderer(_window);
-
-        _imgui = new ImGuiController(_renderer.GLContext, _window, inputContext);
-
         for (int i = 0; i < inputContext.Keyboards.Count; i++)
         {
             inputContext.Keyboards[i].KeyDown += OnKeyDown;
         }
 
-        _renderer.OnImguiDraw += DrawImgui;
+        _renderer = new Renderer(_window);
+
+        _uiManager = new UIManager(this);
+
+        _uiManager.WindowProviders.Add("Game", this);
+        _uiManager.OnImguiDraw += DrawImgui;
 
         //LoadTexturedQuad();
         LoadColoredQuad();
@@ -98,36 +109,37 @@ public class Game : IDisposable
 
     private void DrawImgui()
     {
-        ImGui.SetNextWindowPos(new System.Numerics.Vector2(0.0f, 0.0f), ImGuiCond.Always);
-        ImGui.SetNextWindowSize(new System.Numerics.Vector2(_window.Size.X, 40.0f));
-        ImGui.Begin("Game", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoScrollbar);
-
-        if (ImGui.Button("Properties"))
-            _showProperties = true;
-
-        if (_showProperties)
+        //add to the ui game menu stuff we need
+        if (_uiManager.WindowProviders.TryGetValue("UI", out IImguiWindowProvider imguiWindow))
         {
-            ImGui.Begin("Renderer properties", ref _showProperties);
-            bool debugdraw = _renderer.DebugDraw;
-            if (ImGui.Checkbox("Debug draw", ref debugdraw))
-                _renderer.DebugDraw = debugdraw;
-            if (ImGui.IsItemHovered())
-                ImGui.SetItemTooltip("Enable/Disable debug drawing");
+            ImGui.Begin(imguiWindow.WindowName);
+
+            if (ImGui.Button("Game"))
+                _showImguiWindow = true;
+
+            if (ImGui.IsItemHovered())  //refers to the previous item
+                ImGui.SetItemTooltip("Open game properties window");
+
+            ImGui.SameLine();
+            if (ImGui.Button("Exit"))
+                _exit = true;
 
             ImGui.End();
         }
 
+        if (_showImguiWindow)
+        {
+            ImGui.Begin(WindowName, ref _showImguiWindow, ImGuiWindowFlags.None);
 
-        ImGui.SameLine();
-        if (ImGui.Button("Exit"))
-            _exit = true;
+            ImGui.Text($"Bytes: {_vbo.ByteSize}");
 
-        ImGui.End();
+            ImGui.End();
+        }
     }
 
     private void OnUpdate(double deltaTime)
     {
-        _imgui.Update((float)deltaTime);
+        _uiManager.Update(deltaTime);
 
         if (_exit)
             _window.Close();
@@ -135,20 +147,20 @@ public class Game : IDisposable
 
     private void OnRender(double deltaTime)
     {
-        _renderer.DrawImgui();
+        _uiManager.DrawUI();
 
         _renderer.BeginRender();
 
         //RenderTexturedQuad();
         RenderColoredQuad();
 
-        _renderer.EndRender(_imgui);
+        _uiManager.Render(deltaTime);
     }
 
     private void OnKeyDown(IKeyboard keyboard, Key key, int keyCode)
     {
         if (key == Key.Escape)
-            _window.Close();
+            _exit = true;
     }
 
     private void OnResize(Vector2D<int> d)
@@ -175,11 +187,11 @@ public class Game : IDisposable
             1u, 2u, 3u
         };
 
-        _vbo = new BufferObject(_renderer.GLContext);
+        _vbo = new BufferObject(_renderer.GLContext, BufferUsageARB.StaticDraw);
         _renderer.BindObject(_vbo);
         _vbo.Data(vertices, vertices.Length);
 
-        _ebo = new IndexBufferObject(_renderer.GLContext);
+        _ebo = new IndexBufferObject(_renderer.GLContext, BufferUsageARB.StaticDraw);
         _renderer.BindObject(_ebo);
         _ebo.Data(indices, indices.Length);
 
@@ -250,11 +262,11 @@ public class Game : IDisposable
             1u, 2u, 3u
         };
 
-        _vbo = new BufferObject(_renderer.GLContext);
+        _vbo = new BufferObject(_renderer.GLContext, BufferUsageARB.StaticDraw);
         _renderer.BindObject(_vbo);
         _vbo.Data(vertices, vertices.Length);
 
-        _ebo = new IndexBufferObject(_renderer.GLContext);
+        _ebo = new IndexBufferObject(_renderer.GLContext, BufferUsageARB.StaticDraw);
         _renderer.BindObject(_ebo);
         _ebo.Data(indices, indices.Length);
 

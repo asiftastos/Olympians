@@ -23,7 +23,7 @@ public unsafe class Renderer
 
     public Matrix4x4 Ortho { get { return _ortho; } }
 
-    public Action? OnImguiDraw { get; set; }
+    //public Action? OnImguiDraw { get; set; }
 
     public Renderer(IWindow window)
     {
@@ -71,7 +71,6 @@ public unsafe class Renderer
 
     public void EndRender(ImGuiController imGui)
     {
-        imGui.Render();
     }
 
     public void DrawTriangles(uint elementCount)
@@ -92,15 +91,21 @@ public unsafe class Renderer
 
     public void DrawImgui()
     {
-        if (OnImguiDraw != null)
-            OnImguiDraw();
+        //if (OnImguiDraw != null)
+        //    OnImguiDraw();
 
         if (_debugDraw)
         {
             _gl.PolygonMode(GLEnum.FrontAndBack, GLEnum.Line);
 
             ImGui.SetNextWindowPos(new System.Numerics.Vector2(500.0f, 300.0f), ImGuiCond.Once);
-            ImGui.ShowMetricsWindow();
+            if (ImGui.Begin("Debug"))
+            {
+                ImGui.Text($"FPS: {ImGui.GetIO().Framerate}");
+
+                ImGui.End();
+            }
+            //ImGui.ShowMetricsWindow();
         }
         else
         {

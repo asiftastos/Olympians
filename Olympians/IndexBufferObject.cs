@@ -9,10 +9,17 @@ public unsafe class IndexBufferObject : IDisposable, IBindable
 
     private uint _ebo;
 
-    public IndexBufferObject(GL gL)
+    private BufferUsageARB _bufferUsage;
+
+    private uint _byteSize;
+
+    public uint ByteSize { get => _byteSize; }
+
+    public IndexBufferObject(GL gL, BufferUsageARB bufferUsage)
     {
         _gl = gL;
         _ebo = _gl.GenBuffer();
+        _bufferUsage = bufferUsage;
     }
 
     public void Dispose()
@@ -32,10 +39,12 @@ public unsafe class IndexBufferObject : IDisposable, IBindable
 
     public void Data(IEnumerable<uint> data, int elementCount)
     {
+        _byteSize = (uint)(elementCount * sizeof(uint));
+        
         //fixed: don't let GC move this data or the pointer will be incorect as we use it
         fixed (uint* buf = data.ToArray())
         {
-            _gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(elementCount * sizeof(uint)), buf, BufferUsageARB.StaticDraw);
+            _gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)_byteSize, buf, _bufferUsage);
         }
     }
 }
