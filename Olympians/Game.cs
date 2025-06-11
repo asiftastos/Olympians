@@ -101,6 +101,7 @@ public class Game : IDisposable, IImguiWindowProvider
 
         RegisterTestBed(new ColoredQuad());
         RegisterTestBed(new TexturedQuad());
+        RegisterTestBed(new TexturedCube());
     }
 
     private void DrawImgui()

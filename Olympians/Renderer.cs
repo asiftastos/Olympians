@@ -74,7 +74,7 @@ public unsafe class Renderer: IImguiWindowProvider
 
     public void BeginRender()
     {
-        _gl.Clear(ClearBufferMask.ColorBufferBit);
+        _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
     }
 
     public void EndRender(ImGuiController imGui)
@@ -97,6 +97,21 @@ public unsafe class Renderer: IImguiWindowProvider
         _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
 
+    public void DisableBlend()
+    {
+        _gl.Disable(EnableCap.Blend);
+    }
+
+    public void EnableDepth()
+    {
+        _gl.Enable(EnableCap.DepthTest);
+    }
+
+    public void DisableDepth()
+    {
+        _gl.Disable(EnableCap.DepthTest);
+    }
+
     public void DrawImgui()
     {
         if (_game.UI.WindowProviders.TryGetValue("UI", out IImguiWindowProvider windowProvider))
@@ -106,11 +121,11 @@ public unsafe class Renderer: IImguiWindowProvider
             ImGui.SameLine();
             if (ImGui.Button("Renderer"))
                 _showImguiWindow = true;
-            
+
             if (ImGui.IsItemHovered())  //refers to the previous item
                 ImGui.SetItemTooltip("Open renderer properties window");
-            
-            ImGui.End();    
+
+            ImGui.End();
         }
 
         if (_showImguiWindow)
@@ -121,23 +136,23 @@ public unsafe class Renderer: IImguiWindowProvider
 
             ImGui.End();
         }
-        
+
         if (_debugDraw)
-            {
-                _gl.PolygonMode(GLEnum.FrontAndBack, GLEnum.Line);
+        {
+            _gl.PolygonMode(GLEnum.FrontAndBack, GLEnum.Line);
 
-                ImGui.SetNextWindowPos(new System.Numerics.Vector2(500.0f, 300.0f), ImGuiCond.Once);
-                if (ImGui.Begin("Debug"))
-                {
-                    ImGui.Text($"FPS: {ImGui.GetIO().Framerate}");
-
-                    ImGui.End();
-                }
-                //ImGui.ShowMetricsWindow();
-            }
-            else
+            ImGui.SetNextWindowPos(new System.Numerics.Vector2(500.0f, 300.0f), ImGuiCond.Once);
+            if (ImGui.Begin("Debug"))
             {
-                _gl.PolygonMode(GLEnum.FrontAndBack, GLEnum.Fill);
+                ImGui.Text($"FPS: {ImGui.GetIO().Framerate}");
+
+                ImGui.End();
             }
+            //ImGui.ShowMetricsWindow();
+        }
+        else
+        {
+            _gl.PolygonMode(GLEnum.FrontAndBack, GLEnum.Fill);
+        }
     }
 }
