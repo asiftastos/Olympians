@@ -4,6 +4,7 @@ using ImGuiNET;
 using Silk.NET.OpenGL;
 using System.Numerics;
 using Silk.NET.Maths;
+using Olympians.TestBeds;
 
 namespace Olympians;
 
@@ -22,17 +23,9 @@ public class Game : IDisposable, IImguiWindowProvider
 
     private bool _showImguiWindow;
 
-    private VertexArrayObject _vao;
+    private ITestBed _currentTestBed;
 
-    private BufferObject _vbo;
-
-    private IndexBufferObject _ebo;
-
-    private ShaderProgram _simpleShaderProgram;
-
-    private Texture _texture;
-
-    private Transform _transform;
+    private Dictionary<string, ITestBed> _testbedRegistry;
 
     public IWindow MainWindow { get => _window; }
 
@@ -63,16 +56,16 @@ public class Game : IDisposable, IImguiWindowProvider
 
         _exit = false;
         _showImguiWindow = false;
+
+        _testbedRegistry = new Dictionary<string, ITestBed>();
     }
 
     private void OnClosing()
     {
+        if (_currentTestBed != null)
+            _currentTestBed.Unload();
+
         _uiManager.Dispose();
-        _texture?.Dispose();
-        _simpleShaderProgram.Dispose();
-        _ebo.Dispose();
-        _vbo.Dispose();
-        _vao.Dispose();
     }
 
     public void Dispose()
@@ -104,10 +97,10 @@ public class Game : IDisposable, IImguiWindowProvider
         _uiManager.OnImguiDraw += _renderer.DrawImgui;
         _uiManager.OnImguiDraw += DrawImgui;
 
-        //LoadTexturedQuad();
-        LoadColoredQuad();
-
         _renderer.EnableBlend();
+
+        RegisterTestBed(new ColoredQuad());
+        RegisterTestBed(new TexturedQuad());
     }
 
     private void DrawImgui()
@@ -135,7 +128,18 @@ public class Game : IDisposable, IImguiWindowProvider
         {
             ImGui.Begin(WindowName, ref _showImguiWindow, ImGuiWindowFlags.None);
 
-            ImGui.Text($"Bytes: {_vbo.ByteSize}");
+            //draw testbeds
+            foreach (var item in _testbedRegistry)
+            {
+                if (ImGui.Button(item.Key))
+                {
+                    if (_currentTestBed != null)
+                        _currentTestBed.Unload();
+
+                    _currentTestBed = item.Value;
+                    _currentTestBed.Load(this);
+                }
+            }
 
             ImGui.End();
         }
@@ -143,6 +147,9 @@ public class Game : IDisposable, IImguiWindowProvider
 
     private void OnUpdate(double deltaTime)
     {
+        if (_currentTestBed != null)
+            _currentTestBed.Update(deltaTime);
+
         _uiManager.Update(deltaTime);
 
         if (_exit)
@@ -155,8 +162,8 @@ public class Game : IDisposable, IImguiWindowProvider
 
         _renderer.BeginRender();
 
-        //RenderTexturedQuad();
-        RenderColoredQuad();
+        if (_currentTestBed != null)
+            _currentTestBed.Render(deltaTime);
 
         _uiManager.Render(deltaTime);
     }
@@ -172,147 +179,8 @@ public class Game : IDisposable, IImguiWindowProvider
         _renderer.Resize(d);
     }
 
-    private void LoadTexturedQuad()
+    private void RegisterTestBed(ITestBed testBed)
     {
-        _vao = new VertexArrayObject(_renderer.GLContext);
-        _renderer.BindObject(_vao);
-
-        float[] vertices =
-        {
-            100.0f, 100.0f, 0.0f, 1.0f, 1.0f,
-            100.0f, -100.0f, 0.0f, 1.0f, 0.0f,
-            -100.0f, -100.0f, 0.0f, 0.0f, 0.0f,
-            -100.0f, 100.0f, 0.0f,  0.0f, 1.0f
-        };
-
-        uint[] indices =
-        {
-            0u, 1u, 3u,
-            1u, 2u, 3u
-        };
-
-        _vbo = new BufferObject(_renderer.GLContext, BufferUsageARB.StaticDraw);
-        _renderer.BindObject(_vbo);
-        _vbo.Data(vertices, vertices.Length);
-
-        _ebo = new IndexBufferObject(_renderer.GLContext, BufferUsageARB.StaticDraw);
-        _renderer.BindObject(_ebo);
-        _ebo.Data(indices, indices.Length);
-
-        _vao.EnableAttributes(new[]{
-            new AttributeInfo{
-                AttribIndex = 0,
-                Size = 3,
-                Stride = 5 * sizeof(float),
-                Offset = 0,
-                AttributeType = VertexAttribPointerType.Float
-            },
-            new AttributeInfo{
-                AttribIndex = 1,
-                Size = 2,
-                Stride = 5 * sizeof(float),
-                Offset = 3 * sizeof(float),
-                AttributeType = VertexAttribPointerType.Float
-            }
-        });
-
-        _simpleShaderProgram = new ShaderProgram(_renderer.GLContext, new ShaderInfo
-        {
-            AssetsPath = "Assets/Shaders",
-            VertexName = "simplevertex",
-            FragmentName = "simplefragment"
-        });
-
-
-        _texture = new Texture(_renderer.GLContext);
-        _renderer.BindObject(_texture);
-        _texture.LoadFromFile("Assets/Textures/silk.png");
-
-        //always reset (unbind) VAO first, otherwise it will capture the other unbinds for himself
-        _renderer.ResetObjects(new IBindable[] { _vao, _vbo, _ebo, _texture });
-
-        _transform = new Transform
-        {
-            Position = new Vector3(100.0f, 0.0f, 0.0f)
-        };
-    }
-
-    private void RenderTexturedQuad()
-    {
-        _renderer.BindObject(_vao);
-        _renderer.BindObject(_simpleShaderProgram);
-        _renderer.BindObject(_texture);
-        _simpleShaderProgram.Uniform("uTexture", 0);
-        _simpleShaderProgram.Uniform("view", _transform.ModelMatrix * _renderer.Ortho); //multiplication in reverse order of the shader code
-        _renderer.DrawIndexedTriangles(6);
-    }
-
-    private void LoadColoredQuad()
-    {
-        _vao = new VertexArrayObject(_renderer.GLContext);
-        _renderer.BindObject(_vao);
-
-        float[] vertices =
-        {
-            100.0f, 100.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-            100.0f, -100.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-            -100.0f, -100.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-            -100.0f, 100.0f, 0.0f,  0.0f, 1.0f, 1.0f, 1.0f
-        };
-
-        uint[] indices =
-        {
-            0u, 1u, 3u,
-            1u, 2u, 3u
-        };
-
-        _vbo = new BufferObject(_renderer.GLContext, BufferUsageARB.StaticDraw);
-        _renderer.BindObject(_vbo);
-        _vbo.Data(vertices, vertices.Length);
-
-        _ebo = new IndexBufferObject(_renderer.GLContext, BufferUsageARB.StaticDraw);
-        _renderer.BindObject(_ebo);
-        _ebo.Data(indices, indices.Length);
-
-        _vao.EnableAttributes(new[]{
-            new AttributeInfo{
-                AttribIndex = 0,
-                Size = 3,
-                Stride = 7 * sizeof(float),
-                Offset = 0,
-                AttributeType = VertexAttribPointerType.Float
-            },
-            new AttributeInfo{
-                AttribIndex = 1,
-                Size = 4,
-                Stride = 7 * sizeof(float),
-                Offset = 3 * sizeof(float),
-                AttributeType = VertexAttribPointerType.Float
-            }
-        });
-
-        _simpleShaderProgram = new ShaderProgram(_renderer.GLContext, new ShaderInfo
-        {
-            AssetsPath = "Assets/Shaders",
-            VertexName = "colorvertex",
-            FragmentName = "colorfragment"
-        });
-
-
-        //always reset (unbind) VAO first, otherwise it will capture the other unbinds for himself
-        _renderer.ResetObjects(new IBindable[] { _vao, _vbo, _ebo });
-
-        _transform = new Transform
-        {
-            Position = new Vector3(100.0f, 0.0f, 0.0f)
-        };
-    }
-
-    private void RenderColoredQuad()
-    {
-        _renderer.BindObject(_vao);
-        _renderer.BindObject(_simpleShaderProgram);
-        _simpleShaderProgram.Uniform("view", _transform.ModelMatrix * _renderer.Ortho); //multiplication in reverse order of the shader code
-        _renderer.DrawIndexedTriangles(6);
+        _testbedRegistry.Add(testBed.Name, testBed);
     }
 }
