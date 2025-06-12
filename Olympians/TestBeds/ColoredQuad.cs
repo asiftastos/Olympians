@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using ImGuiNET;
 using Silk.NET.OpenGL;
 
 namespace Olympians.TestBeds;
@@ -12,6 +13,15 @@ public class ColoredQuad : ITestBed
     private IndexBufferObject _ebo;
     private ShaderProgram _simpleShaderProgram;
     private Transform _transform;
+
+    private int _verticesCount;
+    private int _indicesCount;
+    private int _elementsCount;
+    private int _elementSize;
+
+    private int _stride;
+
+    private bool _showImguiWindow;
 
     public string Name => "Colored Quad";
 
@@ -36,6 +46,12 @@ public class ColoredQuad : ITestBed
             1u, 2u, 3u
         };
 
+        _verticesCount = vertices.Length;
+        _indicesCount = indices.Length;
+        _elementSize = 7;
+        _elementsCount = (int)(_verticesCount / _elementSize);
+        _stride = _elementSize * sizeof(float);
+
         _vbo = new BufferObject(_game.Renderer.GLContext, BufferUsageARB.StaticDraw);
         _game.Renderer.BindObject(_vbo);
         _vbo.Data(vertices, vertices.Length);
@@ -48,7 +64,7 @@ public class ColoredQuad : ITestBed
             new AttributeInfo{
                 AttribIndex = 0,
                 Size = 3,
-                Stride = 7 * sizeof(float),
+                Stride = (uint)_stride,
                 Offset = 0,
                 AttributeType = VertexAttribPointerType.Float
             },
@@ -76,6 +92,9 @@ public class ColoredQuad : ITestBed
         {
             Position = new Vector3(100.0f, 0.0f, 0.0f)
         };
+
+        _showImguiWindow = true;
+        _game.UI.OnImguiDraw += DrawImgui;
     }
 
     public void Unload()
@@ -84,6 +103,9 @@ public class ColoredQuad : ITestBed
         _ebo.Dispose();
         _vbo.Dispose();
         _vao.Dispose();
+
+        _showImguiWindow = false;
+        _game.UI.OnImguiDraw -= DrawImgui;
     }
 
     public void Render(double gametime)
@@ -96,6 +118,23 @@ public class ColoredQuad : ITestBed
 
     public void Update(double gametime)
     {
+
+    }
+
+    private void DrawImgui()
+    {
+        if (!_showImguiWindow)
+            return;
+
+        ImGui.Begin(Name, ref _showImguiWindow, ImGuiWindowFlags.AlwaysAutoResize);
         
+        ImGui.LabelText("Number of Vertices", $"{_verticesCount}");
+        ImGui.LabelText("Number of Indices", $"{_indicesCount}");
+        ImGui.LabelText("Number of Elements", $"{_elementsCount}");
+        ImGui.LabelText("Element size", $"{_elementSize} Bytes");
+        ImGui.LabelText("Stride", $"{_stride} Bytes");
+        ImGui.LabelText("Buffer size", $"{_stride * _elementsCount} Bytes");
+        
+        ImGui.End();
     }
 }
