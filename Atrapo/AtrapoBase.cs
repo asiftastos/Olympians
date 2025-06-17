@@ -65,7 +65,8 @@ public unsafe class AtrapoBase
         for (uint i = 0; i < glfwExtensionsCount; i++)
         {
             byte* s = glfwExtensions[i];
-            //Console.WriteLine($"Extension [{i}]: {System.Text.Encoding.UTF8.GetString(s, SilkMarshal.StringLength(s, NativeStringEncoding.UTF8))}");
+            string extension = new string((sbyte*)s);
+            Console.WriteLine($"Extension [{i}]: {extension}");
         }
     }
 }
